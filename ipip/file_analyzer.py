@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import List, Dict, Set, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+from rich.console import Console
 
 class FileCategory(Enum):
     """Categories of files for organization."""
@@ -39,7 +41,9 @@ class FileInfo:
 class FileAnalyzer:
     """Analyzes files to determine their purpose and category."""
     
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose
+        self.console = Console()
         self.test_patterns = [
             r'test_.*\.py$',
             r'.*_test\.py$',
@@ -166,14 +170,75 @@ class FileAnalyzer:
         """Analyze all files in a directory, excluding system and sensitive files."""
         files = []
         
-        if recursive:
-            for file_path in directory.rglob('*'):
-                if file_path.is_file() and self._should_include_file(file_path):
+        # First pass: collect all file paths (for progress tracking)
+        if self.verbose:
+            self.console.print(f"[blue]📁 Scanning directory: {directory}[/blue]")
+        
+        all_file_paths = []
+        scanned_count = 0
+        
+        # Show scanning progress for large directories
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TextColumn("[cyan]{task.completed}[/cyan] files found"),
+            TimeElapsedColumn(),
+            console=self.console,
+            transient=True
+        ) as scan_progress:
+            
+            scan_task = scan_progress.add_task("[cyan]Scanning...", total=None)
+            
+            if recursive:
+                for file_path in directory.rglob('*'):
+                    scanned_count += 1
+                    if scanned_count % 100 == 0:  # Update every 100 files
+                        scan_progress.update(scan_task, completed=len(all_file_paths), description=f"[cyan]Scanning... ({scanned_count} checked)")
+                    
+                    if file_path.is_file() and self._should_include_file(file_path):
+                        all_file_paths.append(file_path)
+            else:
+                for file_path in directory.iterdir():
+                    scanned_count += 1
+                    scan_progress.update(scan_task, completed=len(all_file_paths))
+                    
+                    if file_path.is_file() and self._should_include_file(file_path):
+                        all_file_paths.append(file_path)
+            
+            scan_progress.update(scan_task, completed=len(all_file_paths), description=f"[cyan]Scan complete")
+        
+        # Second pass: analyze files with progress bar
+        if len(all_file_paths) > 10 or self.verbose:  # Show progress for 10+ files or in verbose mode
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TextColumn("files"),
+                TimeElapsedColumn(),
+                console=self.console,
+                transient=True  # Remove progress bar when complete
+            ) as progress:
+                
+                task = progress.add_task(
+                    f"[cyan]Analyzing files...", 
+                    total=len(all_file_paths)
+                )
+                
+                for file_path in all_file_paths:
                     files.append(self.analyze_file(file_path))
+                    progress.advance(task)
+                    
+                    # Update description with current file (for very verbose mode)
+                    if self.verbose and len(all_file_paths) > 50:
+                        progress.update(task, description=f"[cyan]Analyzing: {file_path.name[:30]}...")
         else:
-            for file_path in directory.iterdir():
-                if file_path.is_file() and self._should_include_file(file_path):
-                    files.append(self.analyze_file(file_path))
+            # For small numbers of files, just process without progress bar
+            for file_path in all_file_paths:
+                files.append(self.analyze_file(file_path))
+        
+        if self.verbose:
+            self.console.print(f"[green]✅ Analyzed {len(files)} files[/green]")
         
         return files
     
@@ -397,13 +462,26 @@ class FileAnalyzer:
     
     def find_files_by_query(self, files: List[FileInfo], query: str) -> List[FileInfo]:
         """Find files that match a natural language query using AI."""
+        if self.verbose:
+            self.console.print(f"[blue]🔍 Searching for files matching: '{query}'[/blue]")
+        
         # First try quick heuristic matches for common patterns
         quick_matches = self._quick_heuristic_match(files, query)
         if quick_matches:
+            if self.verbose:
+                self.console.print(f"[green]✅ Found {len(quick_matches)} files using quick pattern matching[/green]")
             return quick_matches
         
         # For more complex queries, use AI to analyze the file list
-        return self._ai_assisted_file_matching(files, query)
+        if self.verbose:
+            self.console.print("[yellow]🤖 Using AI analysis for complex query...[/yellow]")
+        
+        result = self._ai_assisted_file_matching(files, query)
+        
+        if self.verbose:
+            self.console.print(f"[green]✅ AI analysis complete: {len(result)} files found[/green]")
+        
+        return result
     
     def _quick_heuristic_match(self, files: List[FileInfo], query: str) -> List[FileInfo]:
         """Quick heuristic matching for common, safe patterns."""
@@ -437,20 +515,32 @@ class FileAnalyzer:
         """Use AI to intelligently match files based on query."""
         from .llm_resolver import LLMResolver
         
-        # Prepare file list for AI analysis
-        file_data = []
-        for file_info in files:
-            file_data.append({
-                "name": file_info.name,
-                "path": str(file_info.path),
-                "extension": file_info.extension,
-                "category": file_info.category.value,
-                "purpose": file_info.purpose,
-                "size": file_info.size
-            })
-        
-        # Create a focused prompt for file matching
-        prompt = f'''Analyze these files and identify which ones match the query: "{query}"
+        # Show progress for AI preparation
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console,
+            transient=True
+        ) as ai_progress:
+            
+            prep_task = ai_progress.add_task("[yellow]Preparing file data for AI analysis...")
+            
+            # Prepare file list for AI analysis
+            file_data = []
+            for file_info in files:
+                file_data.append({
+                    "name": file_info.name,
+                    "path": str(file_info.path),
+                    "extension": file_info.extension,
+                    "category": file_info.category.value,
+                    "purpose": file_info.purpose,
+                    "size": file_info.size
+                })
+            
+            ai_progress.update(prep_task, description=f"[yellow]Sending {len(file_data)} files to AI for analysis...")
+            
+            # Create a focused prompt for file matching
+            prompt = f'''Analyze these files and identify which ones match the query: "{query}"
 
 Files available:
 {self._format_files_for_ai(file_data)}
@@ -465,27 +555,32 @@ Consider:
 
 Respond with a JSON array of matching file names:
 ["filename1.ext", "filename2.ext"]'''
-        
-        try:
-            # Use LLM to get file matches
-            llm_resolver = LLMResolver(verbose=False)
-            if llm_resolver.model == "local":
-                response = llm_resolver._resolve_with_local_llm(prompt)
-                matched_names = self._parse_ai_file_response(response)
-                
-                # Convert matched names back to FileInfo objects
-                matching_files = []
-                for file_info in files:
-                    if file_info.name in matched_names:
-                        matching_files.append(file_info)
-                
-                if matching_files:  # AI found matches
-                    return matching_files
             
-        except Exception as e:
-            # If AI fails, fall back to basic pattern matching
-            print(f"AI matching failed: {e}")  # Debug output
-            pass
+            ai_progress.update(prep_task, description="[yellow]Waiting for AI response...")
+            
+            try:
+                # Use LLM to get file matches
+                llm_resolver = LLMResolver(verbose=False)
+                if llm_resolver.model == "local":
+                    response = llm_resolver._resolve_with_local_llm(prompt)
+                    matched_names = self._parse_ai_file_response(response)
+                    
+                    ai_progress.update(prep_task, description="[yellow]Processing AI response...")
+                    
+                    # Convert matched names back to FileInfo objects
+                    matching_files = []
+                    for file_info in files:
+                        if file_info.name in matched_names:
+                            matching_files.append(file_info)
+                    
+                    if matching_files:  # AI found matches
+                        return matching_files
+                
+            except Exception as e:
+                # If AI fails, fall back to basic pattern matching
+                if self.verbose:
+                    self.console.print(f"[yellow]AI matching failed: {e}[/yellow]")
+                pass
         
         # Fallback: enhanced pattern matching
         return self._enhanced_pattern_matching(files, query)

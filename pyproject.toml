@@ -44,9 +44,9 @@ dev = [
 ipip = "ipip.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/ipip"
-Repository = "https://github.com/yourusername/ipip"
-Issues = "https://github.com/yourusername/ipip/issues"
+Homepage = "https://github.com/codyreign/ipip"
+Repository = "https://github.com/codyreign/ipip"
+Issues = "https://github.com/codyreign/ipip/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

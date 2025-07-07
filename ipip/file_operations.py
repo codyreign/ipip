@@ -44,7 +44,7 @@ class FileOperationManager:
     def __init__(self, dry_run: bool = False, verbose: bool = False):
         self.dry_run = dry_run
         self.verbose = verbose
-        self.analyzer = FileAnalyzer()
+        self.analyzer = FileAnalyzer(verbose=verbose)
         self.llm_resolver = LLMResolver(verbose=verbose)
         self.current_directory = Path.cwd()
     

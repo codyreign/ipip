@@ -1,5 +1,11 @@
 # ipip - Intelligent Pip Package Installer
 
+[![PyPI version](https://badge.fury.io/py/ipip.svg)](https://badge.fury.io/py/ipip)
+[![Python versions](https://img.shields.io/pypi/pyversions/ipip.svg)](https://pypi.org/project/ipip/)
+[![Downloads](https://pepy.tech/badge/ipip)](https://pepy.tech/project/ipip)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/codyreign/ipip/workflows/Test%20Package/badge.svg)](https://github.com/codyreign/ipip/actions)
+
 **ipip** is an intelligent pip package installer that uses AI to understand what you want and automatically handles package resolution, file organization, and project management. Just install and go - no configuration needed!
 
 ## Features
@@ -47,14 +53,21 @@ All work the same way!
 
 ### 🚀 One-Line Install (Recommended)
 
+**From PyPI (Recommended):**
+```bash
+pip install ipip
+```
+
+**One-Line Installers:**
+
 **Windows:**
 ```cmd
-curl -o install.bat https://raw.githubusercontent.com/yourusername/ipip/main/install.bat && install.bat
+curl -o install.bat https://raw.githubusercontent.com/codyreign/ipip/main/install.bat && install.bat
 ```
 
 **Unix/Linux/macOS:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/yourusername/ipip/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/codyreign/ipip/main/install.sh | bash
 ```
 
 **✨ What happens automatically:**
@@ -66,9 +79,9 @@ curl -sSL https://raw.githubusercontent.com/yourusername/ipip/main/install.sh | 
 
 ### Alternative Methods
 
-**From GitHub:**
+**From GitHub (Development):**
 ```bash
-pip install git+https://github.com/yourusername/ipip.git
+pip install git+https://github.com/codyreign/ipip.git
 ipip --setup  # Run first-time setup
 ```
 
@@ -312,7 +325,7 @@ ipip --context
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ipip.git
+git clone https://github.com/codyreign/ipip.git
 cd ipip
 
 # Install in development mode
