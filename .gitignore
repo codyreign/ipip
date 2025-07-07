@@ -205,3 +205,68 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+/.claude
+
+# Project-specific files and directories
+debug_*.py
+test_*.py
+minimal_test.py
+quick_test.py
+simple_*.py
+enhanced_*.py
+build_diagnostic.py
+check_ollama*.py
+windows_build.py
+
+# Test environments and temporary directories
+test_env/
+test_project/
+
+# Build and distribution files
+dist_pip/
+build/
+
+# Installation and testing scripts
+*.bat
+*.ps1
+*.sh
+!install.bat
+!install.sh
+!uninstall.bat
+!uninstall.sh
+
+# Documentation files that are temporary/testing
+MANUAL_TEST.md
+TESTING_GUIDE.md
+UNICODE_FIX_TEST.md
+OLLAMA_TESTING_GUIDE.md
+
+# Build artifacts
+21.0
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Log files
+*.log
+*.out
