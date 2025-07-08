@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ipip"
+name = "inpip"
 version = "0.1.0"
 description = "Intelligent pip package installer using AI to resolve package names"
 readme = "README.md"

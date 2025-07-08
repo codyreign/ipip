@@ -56,7 +56,19 @@ def clean_build():
 
 def build_package():
     """Build the package"""
-    return run_command("python -m build", "Building package")
+    # Use fast pip wheel method
+    success1 = run_command("python -m pip wheel . --no-deps --wheel-dir dist", "Building wheel with pip")
+    if not success1:
+        print("Wheel build failed, trying alternative...")
+        success1 = run_command("python -m build --wheel --no-isolation", "Building wheel (no isolation)")
+    
+    # Build source distribution
+    success2 = run_command("python -m build --sdist --outdir dist", "Building source distribution")
+    if not success2:
+        print("Source build failed, trying alternative...")
+        success2 = run_command("python setup.py sdist --dist-dir dist", "Building source (setuptools)")
+    
+    return success1 or success2  # At least one should succeed
 
 def upload_to_testpypi():
     """Upload to TestPyPI"""

@@ -217,6 +217,11 @@ enhanced_*.py
 build_diagnostic.py
 check_ollama*.py
 windows_build.py
+test_build.py
+test_progress.py
+diagnose_build.py
+BUILD_TROUBLESHOOTING.md
+BUILD_FIXES.md
 
 # Test environments and temporary directories
 test_env/
